@@ -1,0 +1,51 @@
+name: RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  secure-rdp:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Enable Remote Desktop
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Start-Service TermService
+
+      - name: Create RDP User
+        run: |
+          $password = "Rdp@12345"
+          net user RDP $password /add
+          net localgroup administrators RDP /add
+          net localgroup "Remote Desktop Users" RDP /add
+          echo "RDP_PASSWORD=$password" >> $env:GITHUB_ENV
+
+      - name: Install Tailscale
+        run: |
+          choco install tailscale -y
+
+      - name: Start Tailscale
+        run: |
+          tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-${{ github.run_id }}
+
+      - name: Get Tailscale IP
+        run: |
+          $ip = tailscale ip -4
+          echo "TS_IP=$ip" >> $env:GITHUB_ENV
+          Write-Host "Tailscale IP: $ip"
+
+      - name: Show RDP Info
+        run: |
+          Write-Host "======================"
+          Write-Host "RDP ADDRESS: $env:TS_IP"
+          Write-Host "USERNAME: RDP"
+          Write-Host "PASSWORD: $env:RDP_PASSWORD"
+          Write-Host "======================"
+
+      - name: Keep Runner Alive
+        run: |
+          while ($true) { Start-Sleep -Seconds 300 }
