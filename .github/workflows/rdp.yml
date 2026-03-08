@@ -11,12 +11,12 @@ jobs:
       - name: Download ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip
-          dir
+          Expand-Archive ngrok.zip -Force
+          Get-ChildItem
 
       - name: Enable RDP
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
       - name: Create User
@@ -26,6 +26,5 @@ jobs:
 
       - name: Start ngrok
         run: |
-          cd ngrok-stable-windows-amd64
-          .\ngrok.exe authtoken 3AfGpKJntrE1Tf07qKpFM9Ko1Fv_vgFzB6ixcikC5opV1qZb
-          .\ngrok.exe tcp 3389
+          ./ngrok.exe authtoken 3AfGpKJntrE1Tf07qKpFM9Ko1Fv_vgFzB6ixcikC5opV1qZb
+          ./ngrok.exe tcp 3389
